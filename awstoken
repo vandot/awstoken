@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+
+# Copyright © 2018 Ivan Vandot <ivan@vandot.rs>
+# All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+#/
+#/ Usage: 
+#/ awstoken OPTION
+#/ 
+#/ Description:
+#/ Bash wrapper around awscli for easy temporary security credential generation for AWS API
+#/ 
+#/ Example:
+#/ awstoken -u user -t 123456 -a 012345678910
+#/ awstoken -d aws_profile -t 123456
+#/
+#/ Options:
+
+# Great post by Thiht - https://dev.to/thiht/shell-scripts-matter
+usage() { grep '^#/' "$0" | cut -c4- ; exit 0 ; }
+expr "$*" : ".*-h" > /dev/null && usage
+expr "$*" : ".*--help" > /dev/null && usage
+
+declare USER=""
+declare TOKEN=""
+declare PROFILE="default"
+declare ACCOUNT=""
+declare DURATION=43200
+declare -x AWS_ACCESS_KEY_ID
+declare -x AWS_SECRET_ACCESS_KEY
+declare -x AWS_SESSION_TOKEN
+
+get_session_token() {
+  JSON=$(aws sts get-session-token --profile ${PROFILE} --duration-seconds ${DURATION} --token-code ${TOKEN} --serial-number arn:aws:iam::${ACCOUNT}:mfa/${USER})
+
+  if command -v jq >/dev/null 2>&1; then
+    if ! [[ $(echo "${JSON}" | jq '.') ]]; then
+      echo "${JSON}"
+      exit 1
+    fi
+    AWS_ACCESS_KEY_ID=$(echo "${JSON}" | jq -r '.Credentials.AccessKeyId')
+    AWS_SECRET_ACCESS_KEY=$(echo "${JSON}" | jq -r '.Credentials.SecretAccessKey')
+    AWS_SESSION_TOKEN=$(echo "${JSON}" | jq -r '.Credentials.SessionToken')
+    EXPIRATION=$(echo "${JSON}" | jq -r '.Credentials.Expiration')
+  elif command -v python >/dev/null 2>&1; then
+    if ! [[ $(echo "${JSON}" | python -m json.tool) ]]; then
+      echo "${JSON}"
+      exit 1
+    fi
+    AWS_ACCESS_KEY_ID=$(echo "${JSON}" | python -c 'import sys, json; print(json.load(sys.stdin)["Credentials"]["AccessKeyId"])')
+    AWS_SECRET_ACCESS_KEY=$(echo "${JSON}" | python -c 'import sys, json; print(json.load(sys.stdin)["Credentials"]["SecretAccessKey"])')
+    AWS_SESSION_TOKEN=$(echo "${JSON}" | python -c 'import sys, json; print(json.load(sys.stdin)["Credentials"]["SessionToken"])')
+    EXPIRATION=$(echo "${JSON}" | python -c 'import sys, json; print(json.load(sys.stdin)["Credentials"]["Expiration"])')
+  else
+    printf "\\nInstall jq or python\\n\\n"
+  fi
+
+  printf "\\nExpiration time: %s\\n" "${EXPIRATION}"
+  printf "Got temporary credentials\\n\\n"
+}
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+
+  # Fantastic solution from Bruno Bronosky - http://stackoverflow.com/a/14203146
+  while [[ $# -gt 1 ]]; do
+    key="$1"
+
+    case "${key}" in
+#/   -u, --user username 
+        -u|--user)
+          USER="${2}"
+          shift
+        ;;
+#/   -t, --token token
+        -t|--token)
+          TOKEN="${2}"
+          shift
+        ;;
+#/   -p, --profile profile [default]
+        -p|--profile)
+          PROFILE="${2}"
+          shift
+        ;;
+#/   -a, --account account-id 
+        -a|--account)
+          ACCOUNT="${2}"
+          shift
+        ;;
+#/   -d, --duration duration in s [43200]
+        -d|--duration)
+          DURATION="${2}"
+          shift
+        ;;
+#/   -h, --help: Display this help message     
+        *)
+          usage
+        ;;
+    esac
+    shift
+  done
+
+  if [[ -z ${USER} ]]; then
+    USER=$(awk "/\\[${PROFILE}\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/user/ {print $2}' - | tr -d ' ')
+  fi
+  if [[ -z ${ACCOUNT} ]]; then
+    ACCOUNT=$(awk "/\\[${PROFILE}\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/account/ {print $2}' - | tr -d ' ')
+  fi
+  if [[ -z ${USER} || -z ${TOKEN} || -z ${ACCOUNT} ]]; then
+    printf "\\nYou must set user, token and account!\\n\\n"
+    exit 1
+  fi
+
+  get_session_token
+  
+fi
