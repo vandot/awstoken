@@ -113,5 +113,22 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
   fi
 
   get_session_token
-  
+
+  if test -n "$ZSH_VERSION"; then
+    zsh
+  elif test -n "$BASH_VERSION"; then
+    if [[ $(uname -s) = "Darwin" ]]; then
+      bash --rcfile ~/.bash_profile
+    else
+      bash --rcfile ~/.bashrc
+    fi
+  elif test -n "$KSH_VERSION"; then
+    ksh
+  elif test -n "$FCEDIT"; then
+    ksh
+  else
+    printf "Your shell is currently not supported, make a request at https://github.com/vandot/awstoken\\nYou can manually export the varibables inside your shell.\\n\\n"
+    printf "export AWS_ACCESS_KEY_ID=%s\\nexport AWS_SECRET_ACCESS_KEY=%s\\nexport AWS_SESSION_TOKEN=%s\\n\\n" "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}" "${AWS_SESSION_TOKEN}"
+  fi
+
 fi

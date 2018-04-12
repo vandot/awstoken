@@ -39,7 +39,7 @@ After obtaining temporary security credentials using `sts get-session-token` set
 - *AWS_SECRET_ACCESS_KEY*
 - *AWS_SESSION_TOKEN*
 
-Which awscli uses by default.
+And enters new shell so it can use newly exported variables which awscli uses by default.
 
 ## License
 
