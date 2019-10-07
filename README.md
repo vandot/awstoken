@@ -10,6 +10,7 @@ Now developers AWS_KEY will never be introduced into production :)
 
 - download *.awstoken* into your *$HOME* folder
 - source *.awstoken* into your bash/zsh/ksh env `. ~/.awstoken`
+
 `curl -s https://raw.githubusercontent.com/vandot/awstoken/master/install.sh | bash`
 
 
