@@ -6,9 +6,9 @@
 # license that can be found in the LICENSE file.
 
 if command -v curl >/dev/null 2>&1; then
-  curl -s https://raw.githubusercontent.com/vandot/awstoken/master/.awstoken -O ~/.awstoken
+  curl -s https://raw.githubusercontent.com/vandot/awstoken/master/.awstoken -O "$HOME"/.awstoken
 elif command -v wget >/dev/null 2>&1; then
-  wget -q https://raw.githubusercontent.com/vandot/awstoken/master/.awstoken -o ~/.awstoken
+  wget -q https://raw.githubusercontent.com/vandot/awstoken/master/.awstoken -o "$HOME"/.awstoken
 else
   echo "Download into $HOME folder https://raw.githubusercontent.com/vandot/awstoken/master/.awstoken"
   echo "source .awstoken into your bash/zsh/ksh env . ~/.awstoken"
