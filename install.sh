@@ -33,6 +33,4 @@ else
 fi
 
 echo ". ~/.awstoken" >> ~/$rcfile
-# shellcheck disable=SC1090
-. ~/.awstoken
-printf "awstoken installed...!\\n\\n"
+printf "awstoken installed...\\nto be able to use it current shell source it with\\n. ~/.awstoken\\n\\n"
