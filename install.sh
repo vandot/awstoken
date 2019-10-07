@@ -32,5 +32,5 @@ else
   exit 1
 fi
 
-echo ". ~/.awstoken" >> ~/$rcfile
+echo ". $HOME/.awstoken" >> ~/$rcfile
 printf "awstoken installed...\\nto be able to use it current shell source it with\\n. ~/.awstoken\\n\\n"
