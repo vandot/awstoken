@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+# Copyright © 2018 Ivan Vandot <ivan@vandot.rs>
+# All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+awstoken() {
+
+  local usage
+  usage=$(cat <<-END
+Usage:
+awstoken OPTION
+
+Description:
+Bash wrapper around awscli for easy temporary security credential generation for AWS API
+
+Example:
+awstoken -u user -t 123456 -a 012345678910
+awstoken -p aws_profile -t 123456
+
+Options:
+  -u, --user username
+  -t, --token token
+  -p, --profile profile [default]
+  -a, --account account-id
+  -d, --duration duration in s [43200]
+  -h, --help display this help message
+END
+)
+
+  local user
+  local token
+  local profile="default"
+  local account
+  local duration=43200
+  local result
+  local aws_key
+  local aws_secret
+  local aws_token
+  local expiration
+
+  if [[ "$*" =~ (-h|--help) ]]; then
+    echo "$usage"
+    return 0
+  fi
+
+  # Fantastic solution from Bruno Bronosky - http://stackoverflow.com/a/14203146
+  while [[ $# -gt 1 ]]; do
+    key="$1"
+
+    case "${key}" in
+        -u|--user)
+          user="${2}"
+          shift
+        ;;
+        -t|--token)
+          token="${2}"
+          shift
+        ;;
+        -p|--profile)
+          profile="${2}"
+          shift
+        ;;
+        -a|--account)
+          account="${2}"
+          shift
+        ;;
+        -d|--duration)
+          duration="${2}"
+          shift
+        ;;    
+        *)
+          usage
+        ;;
+    esac
+    shift
+  done
+
+  if [[ -z ${user} ]]; then
+    user=$(awk "/\\[${profile}\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/user/ {print $2}' - | tr -d ' ')
+  fi
+  if [[ -z ${account} ]]; then
+    account=$(awk "/\\[${profile}\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/account/ {print $2}' - | tr -d ' ')
+  fi
+  if [[ -z ${user} || -z ${token} || -z ${account} ]]; then
+    printf "\\nYou must set user, token and account!\\n\\n"
+    return 1
+  fi
+
+  result=$(aws sts get-session-token --profile "${profile}" --duration-seconds "${duration}" --token-code "${token}" --serial-number arn:aws:iam::"${account}":mfa/"${user}" --output text)
+
+  aws_key=$(echo "$result" | awk '{print $2}')
+  aws_secret=$(echo "$result" | awk '{print $4}')
+  aws_token=$(echo "$result" | awk '{print $5}')
+  expiration=$(echo "$result" | awk '{print $3}')
+
+  export AWS_ACCESS_KEY_ID=$aws_key
+  export AWS_SECRET_ACCESS_KEY=$aws_secret
+  export AWS_SESSION_TOKEN=$aws_token
+  printf "Expiration time: %s\\n" "${expiration}"
+  printf "Temporary credentials set!\\n\\n"
+}

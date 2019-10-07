@@ -8,16 +8,18 @@ Now developers AWS_KEY will never be introduced into production :)
 
 ## Install
 
-Download and put script somewhere in the system path, add executable permissions to file.
+- download *.awstoken* into your *$HOME* folder
+- source *.awstoken* into your bash/zsh/ksh env `. ~/.awstoken`
+`curl -s https://raw.githubusercontent.com/vandot/awstoken/master/install.sh | bash`
+
 
 ## Requirements
 
-  1. [awscli](https://aws.amazon.com/cli/)
-  2. [jq](https://stedolan.github.io/jq/) or [python](https://www.python.org/) for parsing JSON response
+  1. [awscli](https://aws.amazon.com/cli/) - `pip install awscli`
 
 ## Usage
 
-- Basic usage `awstoken -u user -t 123456 -a 012345678910`.
+- Basic usage `awstoken -u user -t 123456 -a 012345678910`
 - You can specify different aws profiles defined inside `~/.aws/credentials` using **-p**
 - For help `awstoken -h`
 
@@ -38,8 +40,6 @@ After obtaining temporary security credentials using `sts get-session-token` set
 - *AWS_ACCESS_KEY_ID*
 - *AWS_SECRET_ACCESS_KEY*
 - *AWS_SESSION_TOKEN*
-
-And enters new shell so it can use newly exported variables which awscli uses by default.
 
 ## License
 
