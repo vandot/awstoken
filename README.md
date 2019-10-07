@@ -44,4 +44,4 @@ After obtaining temporary security credentials using `sts get-session-token` set
 
 ## License
 
-Unless otherwise noted, the vslogin source files and binaries are distributed under the BSD-style license found in the LICENSE file.
+Unless otherwise noted, the awstoken source files and binaries are distributed under the BSD-style license found in the LICENSE file.
