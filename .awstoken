@@ -25,7 +25,8 @@ Options:
   -p, --profile profile [default]
   -a, --account account-id
   -d, --duration duration in s [43200]
-  -h, --help display this help message
+  -g, --gov; enable govcloud
+  -h, --help; display this help message
 END
 )
 
@@ -35,6 +36,7 @@ END
   local account
   local duration=43200
   local result
+  local gov
   local aws_key
   local aws_secret
   local aws_token
@@ -69,7 +71,10 @@ END
         -d|--duration)
           duration="${2}"
           shift
-        ;;    
+        ;;
+        -g|--gov)
+          gov="-us-gov"
+        ;;
         *)
           usage
         ;;
@@ -88,16 +93,18 @@ END
     return 1
   fi
 
-  result=$(aws sts get-session-token --profile "${profile}" --duration-seconds "${duration}" --token-code "${token}" --serial-number arn:aws:iam::"${account}":mfa/"${user}" --output text)
+  result=$(aws sts get-session-token --profile "${profile}" --duration-seconds "${duration}" --token-code "${token}" --serial-number arn:aws"${gov}":iam::"${account}":mfa/"${user}" --output text)
 
   aws_key=$(echo "$result" | awk '{print $2}')
   aws_secret=$(echo "$result" | awk '{print $4}')
   aws_token=$(echo "$result" | awk '{print $5}')
   expiration=$(echo "$result" | awk '{print $3}')
 
-  export AWS_ACCESS_KEY_ID=$aws_key
-  export AWS_SECRET_ACCESS_KEY=$aws_secret
-  export AWS_SESSION_TOKEN=$aws_token
-  printf "Expiration time: %s\\n" "${expiration}"
-  printf "Temporary credentials set!\\n\\n"
+  if [[ -n $result ]]; then
+    export AWS_ACCESS_KEY_ID=$aws_key
+    export AWS_SECRET_ACCESS_KEY=$aws_secret
+    export AWS_SESSION_TOKEN=$aws_token
+    printf "Expiration time: %s\\n" "${expiration}"
+    printf "Temporary credentials set!\\n\\n"
+  fi
 }
