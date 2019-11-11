@@ -39,7 +39,7 @@ account = 012345678910
 ## Insecure mode
 
 You can choose to save your temporary credentials so you can reuse them in other shell.
-To enable it you can manualy change `INSECURE` to `true` in `~/.awstoken` or install it with `--insecure` flag
+To enable it you can manualy change `INSECURE` to `true` in `~/.awstoken` or install it with `insecure` option
 
 `curl -s https://raw.githubusercontent.com/vandot/awstoken/master/install.sh | $SHELL -s -- insecure`
 
