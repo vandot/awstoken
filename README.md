@@ -12,7 +12,7 @@ Now developers AWS_KEY will never be introduced into production :)
 
 ## Install
 
-- download **.awstoken** into your *$HOME* folder
+- download **.awstoken** into your $HOME folder
 - source **.awstoken** into your bash/zsh/ksh env `. ~/.awstoken`
 
 Easy way to install is with this command, it will download **.awstoken** into your $HOME folder and add `. ~/.awstoken` at the bottom of your **rcfile**
