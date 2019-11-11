@@ -39,7 +39,6 @@ Options:
   -a, --account account-id
   -d, --duration duration in s [43200]
   -g, --gov; enable govcloud
-  -i, --insecure; save credentials to temporary profile
   -h, --help; display this help message
 END
 )
