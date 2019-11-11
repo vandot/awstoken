@@ -41,7 +41,7 @@ account = 012345678910
 You can choose to save your temporary credentials so you can reuse them in other shell.
 To enable it you can manualy change `INSECURE` to `true` in `~/.awstoken` or install it with `--insecure` flag
 
-`curl -s https://raw.githubusercontent.com/vandot/awstoken/master/install.sh | $SHELL --insecure`
+`curl -s https://raw.githubusercontent.com/vandot/awstoken/master/install.sh | $SHELL -s insecure`
 
 To load temp credentials in other shell run command with selected profile
 `awstoken -p profile`

@@ -39,7 +39,7 @@ install_file() {
 }
 
 insecure() {
-  if [[ $1 =~ --insecure|-i ]]; then
+  if [[ $1 == "insecure" ]]; then
     sed -ie 's/INSECURE=false/INSECURE=true/' ~/.awstoken
   fi
 }
