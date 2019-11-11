@@ -6,17 +6,18 @@ Main purpose is to be able easily to force MFA for all users even for API access
 More about forcing MFA [here](https://www.trek10.com/blog/improving-the-aws-force-mfa-policy-for-IAM-users/).
 Now developers AWS_KEY will never be introduced into production :)
 
-## Install
-
-- download *.awstoken* into your *$HOME* folder
-- source *.awstoken* into your bash/zsh/ksh env `. ~/.awstoken`
-
-`curl -s https://raw.githubusercontent.com/vandot/awstoken/master/install.sh | bash`
-
-
 ## Requirements
 
   1. [awscli](https://aws.amazon.com/cli/) - `pip install awscli`
+
+## Install
+
+- download **.awstoken** into your *$HOME* folder
+- source **.awstoken** into your bash/zsh/ksh env `. ~/.awstoken`
+
+Easy way to install is with this command, it will download **.awstoken** into your $HOME folder and add `. ~/.awstoken` at the bottom of your **rcfile**
+
+`curl -s https://raw.githubusercontent.com/vandot/awstoken/master/install.sh | $SHELL`
 
 ## Usage
 
@@ -34,6 +35,16 @@ aws_secret_access_key = AWSSECRETACCESSKEY
 user = username
 account = 012345678910
 ```
+
+## Insecure mode
+
+You can choose to save your temporary credentials so you can reuse them in other shell.
+To enable it you can manualy change `INSECURE` to `true` in `~/.awstoken` or install it with `--insecure` flag
+
+`curl -s https://raw.githubusercontent.com/vandot/awstoken/master/install.sh | $SHELL --insecure`
+
+To load temp credentials in other shell run command with selected profile
+`awstoken -p profile`
 
 ## How it works
 

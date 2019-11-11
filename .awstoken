@@ -1,11 +1,24 @@
-#!/usr/bin/env bash
-
 # Copyright © 2018 Ivan Vandot <ivan@vandot.rs>
 # All rights reserved.
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
+# shellcheck disable=SC2148
+
+set_awstoken() {
+  export AWS_ACCESS_KEY_ID="${aws_key}"
+  export AWS_SECRET_ACCESS_KEY="${aws_secret}"
+  export AWS_SESSION_TOKEN="${aws_token}"
+  printf "Expiration time: %s\\n" "${expiration}"
+  printf "Temporary credentials set!\\n\\n"
+}
+
 awstoken() {
+
+  if ! command -v aws >/dev/null 2>&1; then
+    printf "aws cli not found...\\npip install awscli\\n\\n"
+    return 1
+  fi
 
   local usage
   usage=$(cat <<-END
@@ -26,10 +39,12 @@ Options:
   -a, --account account-id
   -d, --duration duration in s [43200]
   -g, --gov; enable govcloud
+  -i, --insecure; save credentials to temporary profile
   -h, --help; display this help message
 END
 )
 
+  local INSECURE=false
   local user
   local token
   local profile="default"
@@ -47,8 +62,7 @@ END
     return 0
   fi
 
-  # Fantastic solution from Bruno Bronosky - http://stackoverflow.com/a/14203146
-  while [[ $# -gt 1 ]]; do
+  while [[ $# -ge 1 ]]; do
     key="$1"
 
     case "${key}" in
@@ -82,12 +96,31 @@ END
     shift
   done
 
-  if [[ -z ${user} ]]; then
-    user=$(awk "/\\[${profile}\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/user/ {print $2}' - | tr -d ' ')
+  if [[ -n ${profile} ]]; then
+    if [[ ${INSECURE} == true ]]; then
+      expiration=$(awk "/\\[${profile}-awstoken\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/expiration/ {print $2}' - | tr -d ' ')
+      if [[ -n ${expiration} ]]; then
+        if [[ ${expiration} > $(date +"%Y-%m-%dT%H:%m:%SZ") ]]; then
+          aws_key=$(awk "/\\[${profile}-awstoken\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/aws_access_key_id/ {print $2}' - | tr -d ' ')
+          aws_secret=$(awk "/\\[${profile}-awstoken\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/aws_secret_access_key/ {print $2}' - | tr -d ' ')
+          aws_token=$(awk "/\\[${profile}-awstoken\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/aws_session_token/ {print $2}' - | tr -d ' ')
+          set_awstoken
+          return 0
+        else
+          sed -ie '/\['"${profile}"'-awstoken\]/{N;N;N;N;d;}' ~/.aws/credentials
+          printf "\\nSaved credentials expired and removed!\\n\\n"
+        fi
+      fi
+    fi
+
+    if [[ -z ${user} ]]; then
+      user=$(awk "/\\[${profile}\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/user/ {print $2}' - | tr -d ' ')
+    fi
+    if [[ -z ${account} ]]; then
+      account=$(awk "/\\[${profile}\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/account/ {print $2}' - | tr -d ' ')
+    fi
   fi
-  if [[ -z ${account} ]]; then
-    account=$(awk "/\\[${profile}\\]/{flag=1;next}/\\[/{flag=0}flag" ~/.aws/credentials | awk -F "=" '/account/ {print $2}' - | tr -d ' ')
-  fi
+
   if [[ -z ${user} || -z ${token} || -z ${account} ]]; then
     printf "\\nYou must set user, token and account!\\n\\n"
     return 1
@@ -95,16 +128,21 @@ END
 
   result=$(aws sts get-session-token --profile "${profile}" --duration-seconds "${duration}" --token-code "${token}" --serial-number arn:aws"${gov}":iam::"${account}":mfa/"${user}" --output text)
 
-  aws_key=$(echo "$result" | awk '{print $2}')
-  aws_secret=$(echo "$result" | awk '{print $4}')
-  aws_token=$(echo "$result" | awk '{print $5}')
-  expiration=$(echo "$result" | awk '{print $3}')
+  aws_key=$(echo "${result}" | awk '{print $2}')
+  aws_secret=$(echo "${result}" | awk '{print $4}')
+  aws_token=$(echo "${result}" | awk '{print $5}')
+  expiration=$(echo "${result}" | awk '{print $3}')
 
   if [[ -n $result ]]; then
-    export AWS_ACCESS_KEY_ID=$aws_key
-    export AWS_SECRET_ACCESS_KEY=$aws_secret
-    export AWS_SESSION_TOKEN=$aws_token
-    printf "Expiration time: %s\\n" "${expiration}"
-    printf "Temporary credentials set!\\n\\n"
+    set_awstoken
+    if [[ ${INSECURE} == true ]]; then
+      /bin/cat >> ~/.aws/credentials <<EOT
+[${profile}-awstoken]
+expiration=${expiration}
+aws_access_key_id=${aws_key}
+aws_secret_access_key=${aws_secret}
+aws_session_token=${aws_token}
+EOT
+    fi
   fi
 }
