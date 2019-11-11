@@ -34,8 +34,9 @@ install_file() {
     echo "Unknown shell, source ~/.awstoken into your shell env manually"
     exit 1
   fi
-
-  echo ". $HOME/.awstoken" >> ~/$rcfile
+  if ! grep -q ". $HOME/.awstoken" ~/$rcfile; then
+    echo ". $HOME/.awstoken" >> ~/$rcfile
+  fi
 }
 
 insecure() {
